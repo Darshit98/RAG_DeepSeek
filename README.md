@@ -123,8 +123,6 @@ For additional support:
 - Check the [Issues](link-to-issues) section
 - Contact: [Your Contact Information]
 
-## 📄 License
-[Your License Information]
 
 ## 🙏 Acknowledgments
 - [Ollama](https://ollama.ai)
