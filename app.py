@@ -15,7 +15,7 @@ from langchain_core.prompts import (
 
 # Initialize session state
 if "message_log" not in st.session_state:
-    st.session_state.message_log = [{"role": "ai", "content": "Hi! I'm DeepSeek. How can I help you code today? 💻"}]
+    st.session_state.message_log = [{"role": "ai", "content": "Hi! I'm DeepSeek, your AI coding assistant. How can I assist you with your coding challenges today? 💻"}]
 
 def export_as_text(messages):
     """Export chat history as a text file"""
@@ -76,49 +76,102 @@ def export_as_pdf(messages):
 # Custom CSS styling
 st.markdown("""
 <style>
-    /* Existing styles */
+    /* Main background and text color */
     .main {
-        background-color: #1a1a1a;
-        color: #ffffff;
-    }
-    .sidebar .sidebar-content {
-        background-color: #2d2d2d;
-    }
-    .stTextInput textarea {
-        color: #ffffff !important;
+        background-color: #f0f2f6;
+        color: #333333;
     }
     
-    /* Add these new styles for select box */
+    /* Sidebar styling */
+    .sidebar .sidebar-content {
+        background-color: #ffffff;
+        border-right: 1px solid #e0e0e0;
+    }
+    
+    /* Text input styling */
+    .stTextInput textarea {
+        color: #333333 !important;
+        background-color: #ffffff !important;
+        border: 1px solid #cccccc !important;
+        border-radius: 5px !important;
+    }
+    
+    /* Select box styling */
     .stSelectbox div[data-baseweb="select"] {
-        color: white !important;
-        background-color: #3d3d3d !important;
+        color: #333333 !important;
+        background-color: #ffffff !important;
+        border: 1px solid #cccccc !important;
+        border-radius: 5px !important;
     }
     
     .stSelectbox svg {
-        fill: white !important;
+        fill: #333333 !important;
     }
     
     .stSelectbox option {
-        background-color: #2d2d2d !important;
-        color: white !important;
+        background-color: #ffffff !important;
+        color: #333333 !important;
     }
     
-    /* For dropdown menu items */
+    /* Dropdown menu items */
     div[role="listbox"] div {
-        background-color: #2d2d2d !important;
+        background-color: #ffffff !important;
+        color: #333333 !important;
+    }
+    
+    /* Button styling */
+    .stButton button {
+        background-color: #4CAF50 !important;
         color: white !important;
+        border: none !important;
+        border-radius: 5px !important;
+        padding: 10px 20px !important;
+        font-size: 16px !important;
+        cursor: pointer !important;
+        transition: background-color 0.3s ease !important;
+    }
+    
+    .stButton button:hover {
+        background-color: #45a049 !important;
+    }
+    
+    /* Header and caption styling */
+    .stMarkdown h1 {
+        color: #4CAF50;
+        font-size: 2.5em;
+        font-weight: bold;
+    }
+    
+    .stMarkdown h2 {
+        color: #333333;
+        font-size: 1.5em;
+        font-weight: bold;
+    }
+    
+    .stMarkdown p {
+        color: #666666;
+        font-size: 1em;
+    }
+    
+    /* Chat message styling */
+    .stChatMessage {
+        background-color: #ffffff;
+        border: 1px solid #e0e0e0;
+        border-radius: 5px;
+        padding: 10px;
+        margin-bottom: 10px;
     }
 </style>
 """, unsafe_allow_html=True)
-st.title("🧠 DeepSeek Code Companion")
-st.caption("🚀 Your AI Pair Programmer with Debugging Superpowers")
+st.title("🧠 DeepSeek AI Assistant")
+st.caption("🚀 Your Intelligent Coding Partner with Debugging Skills")
 
 # Sidebar configuration
 with st.sidebar:
     st.header("⚙️ Configuration")
     selected_model = st.selectbox(
-        "Choose Model",
-        ["deepseek-r1:1.5b", "deepseek-r1:3b"],
+        "Model Selected",
+        ["deepseek-r1:1.5b"],
         index=0
     )
     st.divider()
@@ -165,10 +218,14 @@ with st.sidebar:
                 except Exception as e:
                     st.error(f"Error exporting chat: {str(e)}")
         st.divider()
-    st.markdown("Built with [Ollama](https://ollama.ai/) | [LangChain](https://python.langchain.com/)")
     if st.button("Clear Chat History"):
-        st.session_state.message_log = [{"role": "ai", "content": "Hi! I'm DeepSeek. How can I help you code today? 💻"}]
+        st.session_state.message_log = [{"role": "ai", "content": "Hi! I'm DeepSeek, your AI coding assistant. How can I assist you with your coding challenges today? 💻"}]
         st.rerun()
+    
+    st.markdown("Built with [Ollama](https://ollama.ai/) | [LangChain](https://python.langchain.com/)")
+    
+    # Footer at the bottom of the sidebar
+    st.markdown("<footer style='text-align: center; margin-top: 100px;'>© Darshit Shah</footer>", unsafe_allow_html=True)
 
 
 # initiate the chat engine
@@ -225,6 +282,7 @@ with chat_container:
 # Chat input and processing
 user_query = st.chat_input("Type your coding question here...")
 
+
 def generate_ai_response(prompt_chain):
     processing_pipeline=prompt_chain | llm_engine | StrOutputParser()
     return processing_pipeline.invoke({})
@@ -258,3 +316,34 @@ if user_query:
     
     # Rerun to update chat display
     st.rerun()
+
+# Add this function to execute code
+def execute_code(code):
+    try:
+        # Check for input() usage
+        if "input(" in code:
+            return "Warning: The use of input() is not supported in this environment. Please modify your code to use direct assignments or Streamlit widgets for input."
+
+        # Redirect stdout to capture print statements
+        import io
+        import contextlib
+
+        output = io.StringIO()
+        with contextlib.redirect_stdout(output):
+            exec(code, {})
+        
+        return output.getvalue()
+    except Exception as e:
+        return str(e)
+
+# Add this section in your Streamlit app
+st.markdown("### 🛠️ Code Execution Environment")
+code_input = st.text_area("Enter your Python code here:", height=200)
+
+if st.button("Run Code"):
+    if code_input.strip():
+        with st.spinner("Running your code..."):
+            result = execute_code(code_input)
+            st.text_area("Output", result, height=200)
+    else:
+        st.warning("Please enter some code to run.")
