@@ -8,6 +8,7 @@ from langchain_core.prompts import ChatPromptTemplate
 from langchain_ollama.llms import OllamaLLM
 import os
 import time
+import concurrent.futures
 
 st.markdown("""
     <style>
@@ -86,8 +87,9 @@ class FAISSVectorStore:
         self.documents = []
 
     def add_documents(self, document_chunks):
-        # Convert document chunks to embeddings
-        embeddings = self.embedding_model.embed_documents([doc.page_content for doc in document_chunks])
+        # Convert document chunks to embeddings in parallel
+        with concurrent.futures.ThreadPoolExecutor() as executor:
+            embeddings = list(executor.map(self.embedding_model.embed_documents, [doc.page_content for doc in document_chunks]))
         
         # Initialize FAISS index if it doesn't exist
         if self.index is None:
