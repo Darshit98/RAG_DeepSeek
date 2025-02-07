@@ -8,73 +8,116 @@ from langchain_core.prompts import ChatPromptTemplate
 from langchain_ollama.llms import OllamaLLM
 import os
 import time
-import concurrent.futures
 
 st.markdown("""
-    <style>
+<style>
+    /* Main background and text color */
     .stApp {
-        background-color: #0E1117;
-        color: #FFFFFF;
+        background-color: #f4f4f9;
+        color: #333333;
     }
     
-    /* Chat Input Styling */
-    .stChatInput input {
-        background-color: #1E1E1E !important;
-        color: #FFFFFF !important;
-        border: 1px solid #3A3A3A !important;
+    /* Sidebar styling */
+    .sidebar .sidebar-content {
+        background-color: #ffffff;
+        border-right: 1px solid #e0e0e0;
+        padding: 20px;
     }
     
-    /* User Message Styling */
-    .stChatMessage[data-testid="stChatMessage"]:nth-child(odd) {
-        background-color: #1E1E1E !important;
-        border: 1px solid #3A3A3A !important;
-        color: #E0E0E0 !important;
-        border-radius: 10px;
+    /* Text input styling */
+    .stTextInput textarea {
+        color: #333333 !important;
+        background-color: #ffffff !important;
+        border: 1px solid #cccccc !important;
+        border-radius: 8px !important;
+        padding: 10px !important;
+    }
+    
+    /* Select box styling */
+    .stSelectbox div[data-baseweb="select"] {
+        color: #333333 !important;
+        background-color: #ffffff !important;
+        border: 1px solid #cccccc !important;
+        border-radius: 8px !important;
+    }
+    
+    .stSelectbox svg {
+        fill: #333333 !important;
+    }
+    
+    .stSelectbox option {
+        background-color: #ffffff !important;
+        color: #333333 !important;
+    }
+    
+    /* Dropdown menu items */
+    div[role="listbox"] div {
+        background-color: #ffffff !important;
+        color: #333333 !important;
+    }
+    
+    /* Button styling */
+    .stButton button {
+        background-color: #007BFF !important;
+        color: white !important;
+        border: none !important;
+        border-radius: 8px !important;
+        padding: 10px 20px !important;
+        font-size: 16px !important;
+        cursor: pointer !important;
+        transition: background-color 0.3s ease !important;
+    }
+    
+    .stButton button:hover {
+        background-color: #0056b3 !important;
+    }
+    
+    /* Header and caption styling */
+    .stMarkdown h1 {
+        color: #007BFF;
+        font-size: 2.5em;
+        font-weight: bold;
+    }
+    
+    .stMarkdown h2 {
+        color: #333333;
+        font-size: 1.5em;
+        font-weight: bold;
+    }
+    
+    .stMarkdown p {
+        color: #666666;
+        font-size: 1em;
+    }
+    
+    /* Chat message styling */
+    .stChatMessage {
+        background-color: #ffffff;
+        border: 1px solid #e0e0e0;
+        border-radius: 8px;
         padding: 15px;
-        margin: 10px 0;
+        margin-bottom: 10px;
     }
-    
-    /* Assistant Message Styling */
-    .stChatMessage[data-testid="stChatMessage"]:nth-child(even) {
-        background-color: #2A2A2A !important;
-        border: 1px solid #404040 !important;
-        color: #F0F0F0 !important;
-        border-radius: 10px;
-        padding: 15px;
-        margin: 10px 0;
-    }
-    
-    /* Avatar Styling */
-    .stChatMessage .avatar {
-        background-color: #00FFAA !important;
-        color: #000000 !important;
-    }
-    
-    /* Text Color Fix */
-    .stChatMessage p, .stChatMessage div {
-        color: #FFFFFF !important;
-    }
-    
-    .stFileUploader {
-        background-color: #1E1E1E;
-        border: 1px solid #3A3A3A;
-        border-radius: 5px;
-        padding: 15px;
-    }
-    
-    h1, h2, h3 {
-        color: #00FFAA !important;
-    }
-    </style>
-    """, unsafe_allow_html=True)
+</style>
+""", unsafe_allow_html=True)
 
 PROMPT_TEMPLATE = """
-You are an expert research assistant. Use the provided context to answer the query. 
-If unsure, state that you don't know. Be concise and factual (max 3 sentences).
+You are a sophisticated AI research analyst with expertise in document analysis and information extraction. Your role is to:
 
-Query: {user_query} 
-Context: {document_context} 
-Answer:
+1. Analyze the provided context thoroughly
+2. Extract relevant information precisely
+3. Synthesize clear, accurate responses
+
+Guidelines:
+- Focus on information directly supported by the context
+- Maintain academic/professional tone
+- Cite specific sections when relevant
+- Acknowledge any ambiguities or limitations in the source material
+- Structure complex responses for clarity
+
+Query: {user_query}
+Context: {document_context}
+Response (be concise and factual, max 3 sentences):
 """
 PDF_STORAGE_PATH = 'document_store/pdfs/'
 EMBEDDING_MODEL = OllamaEmbeddings(model="deepseek-r1:1.5b")
@@ -87,9 +130,8 @@ class FAISSVectorStore:
         self.documents = []
 
     def add_documents(self, document_chunks):
-        # Convert document chunks to embeddings in parallel
-        with concurrent.futures.ThreadPoolExecutor() as executor:
-            embeddings = list(executor.map(self.embedding_model.embed_documents, [doc.page_content for doc in document_chunks]))
+        # Convert document chunks to embeddings
+        embeddings = self.embedding_model.embed_documents([doc.page_content for doc in document_chunks])
         
         # Initialize FAISS index if it doesn't exist
         if self.index is None:
@@ -169,7 +211,7 @@ def generate_answer(user_query, context_documents):
 
 # UI Configuration
 st.title("📘 DocuMind AI")
-st.markdown("### Your Intelligent Document Assistant")
+st.markdown("### Your Premier Intelligent Document Assistant")
 st.markdown("---")
 
 # File Upload Section
