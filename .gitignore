@@ -1,0 +1,42 @@
+# Dependencies
+node_modules/
+venv/
+env/
+__pycache__/
+*.pyc
+vendor/
+
+# Environment variables
+.env
+.env.local
+*.pem
+config.json
+secrets.yaml
+
+# Build output
+dist/
+build/
+out/
+target/
+*.class
+
+# IDE
+.idea/
+.vscode/
+*.sublime-*
+.settings/
+
+# System files
+.DS_Store
+Thumbs.db
+*.swp
+*~
+
+# Logs
+*.log
+logs/
+npm-debug.log*
+
+# Test coverage
+coverage/
+.nyc_output/
