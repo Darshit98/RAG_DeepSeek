@@ -12,6 +12,67 @@ from langchain_core.prompts import (
     AIMessagePromptTemplate,
     ChatPromptTemplate
 )
+
+# Initialize session state
+if "message_log" not in st.session_state:
+    st.session_state.message_log = [{"role": "ai", "content": "Hi! I'm DeepSeek. How can I help you code today? 💻"}]
+
+def export_as_text(messages):
+    """Export chat history as a text file"""
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    filename = f"chat_history_{timestamp}.txt"
+    
+    try:
+        with open(filename, "w", encoding="utf-8") as f:
+            for msg in messages:
+                role = "DeepSeek" if msg["role"] == "ai" else "User"
+                # Clean the content of emojis and special characters
+                content = msg["content"].encode('ascii', 'ignore').decode('ascii')
+                f.write(f"{role}:\n{content}\n\n")
+        return filename
+    except Exception as e:
+        st.error(f"Error in text export: {str(e)}")
+        return None
+
+def export_as_pdf(messages):
+    """Export chat history as a PDF file"""
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    filename = f"chat_history_{timestamp}.pdf"
+    
+    try:
+        pdf = FPDF()
+        pdf.set_auto_page_break(auto=True, margin=15)
+        pdf.add_page()
+        
+        # Add title using default font
+        pdf.set_font("Arial", "B", 16)
+        pdf.cell(0, 10, "DeepSeek Code Companion - Chat History", ln=True, align='C')
+        pdf.ln(10)
+        
+        # Add content
+        for msg in messages:
+            role = "DeepSeek" if msg["role"] == "ai" else "User"
+            # Clean the content of emojis and special characters
+            content = msg["content"].encode('ascii', 'ignore').decode('ascii')
+            
+            # Add role
+            pdf.set_font("Arial", "B", 12)
+            pdf.cell(0, 10, f"{role}:", ln=True)
+            
+            # Add message content
+            pdf.set_font("Arial", "", 10)
+            # Split content into lines to handle long messages
+            lines = [content[i:i+90] for i in range(0, len(content), 90)]
+            for line in lines:
+                pdf.multi_cell(0, 10, line)
+            pdf.ln(5)
+        
+        pdf.output(filename)
+        return filename
+    except Exception as e:
+        st.error(f"Error in PDF export: {str(e)}")
+        return None
+
 # Custom CSS styling
 st.markdown("""
 <style>
@@ -81,21 +142,26 @@ with st.sidebar:
         if export_format != "Select Format":
             if st.button(f"Export as {export_format}"):
                 try:
+                    filename = None
                     if export_format == "Text":
                         filename = export_as_text(st.session_state.message_log)
                     else:  # PDF
                         filename = export_as_pdf(st.session_state.message_log)
                     
-                    # Provide download link
-                    with open(filename, "rb") as f:
-                        st.download_button(
-                            label=f"Download {export_format} file",
-                            data=f,
-                            file_name=filename,
-                            mime="text/plain" if export_format == "Text" else "application/pdf"
-                        )
-                    # Clean up the file after download
-                    os.remove(filename)
+                    if filename:
+                        # Provide download link
+                        with open(filename, "rb") as f:
+                            file_data = f.read()
+                            st.download_button(
+                                label=f"Download {export_format} file",
+                                data=file_data,
+                                file_name=filename,
+                                mime="text/plain" if export_format == "Text" else "application/pdf"
+                            )
+                        # Clean up the file after download
+                        os.remove(filename)
+                    else:
+                        st.error("Failed to generate export file")
                 except Exception as e:
                     st.error(f"Error exporting chat: {str(e)}")
         st.divider()
@@ -147,10 +213,6 @@ system_prompt = SystemMessagePromptTemplate.from_template(
     Always respond in English and prioritize clarity and maintainability in your solutions."""
 )
 
-# Session state management
-if "message_log" not in st.session_state:
-    st.session_state.message_log = [{"role": "ai", "content": "Hi! I'm DeepSeek. How can I help you code today? 💻"}]
-
 # Chat container
 chat_container = st.container()
 
@@ -196,47 +258,3 @@ if user_query:
     
     # Rerun to update chat display
     st.rerun()
-
-def export_as_text(messages):
-    """Export chat history as a text file"""
-    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    filename = f"chat_history_{timestamp}.txt"
-    
-    with open(filename, "w", encoding="utf-8") as f:
-        for msg in messages:
-            role = "DeepSeek" if msg["role"] == "ai" else "User"
-            f.write(f"{role}: {msg['content']}\n\n")
-    
-    return filename
-
-def export_as_pdf(messages):
-    """Export chat history as a PDF file"""
-    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    filename = f"chat_history_{timestamp}.pdf"
-    
-    pdf = FPDF()
-    pdf.add_page()
-    pdf.set_font("Arial", size=12)
-    
-    # Add title
-    pdf.set_font("Arial", "B", 16)
-    pdf.cell(200, 10, txt="DeepSeek Code Companion - Chat History", ln=True, align='C')
-    pdf.ln(10)
-    
-    # Add content
-    pdf.set_font("Arial", size=12)
-    for msg in messages:
-        role = "DeepSeek" if msg["role"] == "ai" else "User"
-        pdf.set_font("Arial", "B", 12)
-        pdf.cell(200, 10, txt=f"{role}:", ln=True)
-        pdf.set_font("Arial", size=12)
-        
-        # Split content into lines to handle long messages
-        content = msg["content"]
-        lines = [content[i:i+90] for i in range(0, len(content), 90)]
-        for line in lines:
-            pdf.cell(200, 10, txt=line, ln=True)
-        pdf.ln(5)
-    
-    pdf.output(filename)
-    return filename
